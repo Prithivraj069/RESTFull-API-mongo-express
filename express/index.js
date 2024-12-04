@@ -1,11 +1,13 @@
 const express = require("express");
 const cors = require("cors");
+const { ObjectId } = require("mongodb");
 require("dotenv").config();
 const MongoClient = require("mongodb").MongoClient;
-const dbname = "recipe_book";
 
+const dbname = "sample_restaurants";
 const mongoUri = process.env.MONGO_URI;
-// const mongoUri = "mongodb+srv://root:prithiv069@cluster0.k9z8v.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const RESTAURANTS = "restaurants";
+const NIGHBORHOODS = "neighborhoods";
 
 console.log(mongoUri);
 
@@ -18,9 +20,7 @@ app.use(express.json());
 app.use(cors());
 
 async function connect(uri, dbname) {
-    let client = await MongoClient.connect(uri, {
-        useUnifiedTopology: true
-    })
+    let client = await MongoClient.connect(uri);
     _db = client.db(dbname);
     return _db;
 }
@@ -30,12 +30,46 @@ async function main() {
 
   let db = await connect(mongoUri, dbname);
 
-  // Routes
-  app.get('/', function(req,res){
+
+  app.get('/', function (req, res) {
     res.json({
-     "message":"Hello World!"
-   });
+        'message': 'Hello World!'
+    })
 })
+  // get from server
+  app.get('/listings', async (req, res) => {
+
+    try{
+      const listings = await db.collection(RESTAURANTS)
+      .find(). project({
+          name:1,
+          cuisine: 1
+      }). limit(15).toArray();
+
+      res.json({
+        listings
+      })
+
+    } catch (e) {
+      console.error("Error fetching recipes:", error);
+      res.status(500);
+    }  
+  })
+
+  app.get('/listings/:id', async (req, res) => {
+    const id = req.params.id;
+    const result = db.collection(RESTAURANTS)
+          .findOne({
+            _id: new ObjectId(id)
+          });
+
+          res.json({
+            result
+          })
+  })
+
+  // POST Method
+
 
 }
 
