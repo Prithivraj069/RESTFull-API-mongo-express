@@ -70,19 +70,14 @@ async function main() {
   app.post('/restaurant', async function (req, res) {
 
     try {
-
-        // validation
-        // or you can use Yup Validation: https://github.com/jquense/yup
         if (!req.body.name || !req.body.borough || !req.body.cuisine || !req.body.address.building
             || !req.body.address.street || !req.body.address.zipcode) {
             res.status(400).json({
                 'error': 'Missing field'
             });
-            return; // end the function prematurely
+            return;
         }
 
-
-        // emulate: db.collection.insertOne
         const result = await db.collection(RESTAURANTS).insertOne({
             name: req.body.name,
             borough: req.body.borough,
@@ -94,18 +89,65 @@ async function main() {
             }
         })
 
-        // explictly send back status 201 to indicate new resource has been created
         res.status(201).json({
             result
         })
     } catch (e) {
-        // send back a HTTP 500 status, telling user that something is wrong
-        // --> internal server error
         res.status(500).json({
             "error": e.message
         })
     }
+})
 
+//PUT Method for updating 
+app.put('/restaurant/:id', async function (req, res) {
+    try {
+
+      const result = await db.collection(RESTAURANTS).updateOne(
+        {
+          _id: new ObjectId(req.params.id)
+        },{
+          $set: {
+            name:req.body.name,
+            cuisine: req.body.cuisine,
+            borough: req.body.borough,
+            address: {
+              building: req.body.address.building,
+              street:req.body.address.building,
+              zipcode: req.body.address.zipcode
+            }
+          }
+        })
+
+        res.json({
+          result
+        })
+
+        console.log(result);
+
+    } catch(e) {
+      res.sendStatus(500);
+    }
+})
+
+//DELETE Method
+
+app.delete('/restaurant/:id', async function (req, res) {
+  try {
+
+    const result = await db.collection(RESTAURANTS).deleteOne({
+      '_id': new ObjectId(req.params.id)
+    })
+
+    res.json({
+      result
+    });
+    
+    console.log("result successfully deleted: ", result)
+
+  } catch(e) {
+    res.sendStatus(500);
+  }
 })
 
 }
