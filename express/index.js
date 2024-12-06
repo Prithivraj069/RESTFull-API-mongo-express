@@ -67,37 +67,47 @@ async function main() {
   })
 
   // POST Method
-  app.post('/restaurant', async (res, req) => {
+  app.post('/restaurant', async function (req, res) {
+
     try {
 
-      if (!req.body.name || !req.body.borough || !req.body.cuisine || !req.body.address.building
-        || !req.body.address.street || !req.body.address.zipcode) {
-        res.status(400).json({
-            'error': 'Missing field'
-        });
-        return; // end the function prematurely
-    }
-        const restaurantPostResult = await db.collection(RESTAURANTS).insertOne({
-          name: req.body.name,
-          borough: req.body.borough,
-          cuisine: req.body.cuisine,
-          address: {
-            building: req.body.address.building,
-            street: req.body.address.street,
-            zipcode: req.body.address.zipcode
-          }
+        // validation
+        // or you can use Yup Validation: https://github.com/jquense/yup
+        if (!req.body.name || !req.body.borough || !req.body.cuisine || !req.body.address.building
+            || !req.body.address.street || !req.body.address.zipcode) {
+            res.status(400).json({
+                'error': 'Missing field'
+            });
+            return; // end the function prematurely
+        }
+
+
+        // emulate: db.collection.insertOne
+        const result = await db.collection(RESTAURANTS).insertOne({
+            name: req.body.name,
+            borough: req.body.borough,
+            cuisine: req.body.cuisine,
+            address: {
+                building: req.body.address.building,
+                street: req.body.address.street,
+                zipcode: req.body.address.zipcode
+            }
         })
-      res.json({
-        restaurantPostResult
-      })
 
-      console.log(restaurantPostReult);
-
-    } catch(e) {
-      console.error("Error fetching recipes:", e);
-      res.sendStatus(500);
+        // explictly send back status 201 to indicate new resource has been created
+        res.status(201).json({
+            result
+        })
+    } catch (e) {
+        // send back a HTTP 500 status, telling user that something is wrong
+        // --> internal server error
+        res.status(500).json({
+            "error": e.message
+        })
     }
-  })
+
+})
+
 }
 
 main();
