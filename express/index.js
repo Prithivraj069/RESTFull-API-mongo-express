@@ -11,12 +11,9 @@ const NIGHBORHOODS = "neighborhoods";
 
 console.log(mongoUri);
 
-let app = express();
+const app = express();
 
-// !! Enable processing JSON data
 app.use(express.json());
-
-// !! Enable CORS
 app.use(cors());
 
 async function connect(uri, dbname) {
@@ -25,7 +22,6 @@ async function connect(uri, dbname) {
     return _db;
 }
 
-// SETUP END
 async function main() {
 
   let db = await connect(mongoUri, dbname);
@@ -36,41 +32,72 @@ async function main() {
         'message': 'Hello World!'
     })
 })
-  // get from server
-  app.get('/listings', async (req, res) => {
+
+  app.get('/listings/restaurants', async (req, res) => {
 
     try{
       const listings = await db.collection(RESTAURANTS)
-      .find(). project({
+      .find().project({
           name:1,
           cuisine: 1
-      }). limit(15).toArray();
+      }).limit(15).toArray();
 
       res.json({
         listings
       })
 
     } catch (e) {
-      console.error("Error fetching recipes:", error);
+      console.error("Error fetching recipes:", e);
       res.status(500);
     }  
   })
 
-  app.get('/listings/:id', async (req, res) => {
+  app.get('/listings/restaurants/:id', async (req, res) => {
     const id = req.params.id;
-    const result = db.collection(RESTAURANTS)
+    const result = await db.collection(RESTAURANTS)
           .findOne({
             _id: new ObjectId(id)
-          });
+          })
 
           res.json({
             result
           })
+
+          console.log(result);
   })
 
   // POST Method
+  app.post('/restaurant', async (res, req) => {
+    try {
 
+      if (!req.body.name || !req.body.borough || !req.body.cuisine || !req.body.address.building
+        || !req.body.address.street || !req.body.address.zipcode) {
+        res.status(400).json({
+            'error': 'Missing field'
+        });
+        return; // end the function prematurely
+    }
+        const restaurantPostResult = await db.collection(RESTAURANTS).insertOne({
+          name: req.body.name,
+          borough: req.body.borough,
+          cuisine: req.body.cuisine,
+          address: {
+            building: req.body.address.building,
+            street: req.body.address.street,
+            zipcode: req.body.address.zipcode
+          }
+        })
+      res.json({
+        restaurantPostResult
+      })
 
+      console.log(restaurantPostReult);
+
+    } catch(e) {
+      console.error("Error fetching recipes:", e);
+      res.sendStatus(500);
+    }
+  })
 }
 
 main();
