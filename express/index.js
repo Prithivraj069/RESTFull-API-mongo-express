@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const { ObjectId } = require("mongodb");
 require("dotenv").config();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
 const MongoClient = require("mongodb").MongoClient;
 
 const dbname = "sample_restaurants";
@@ -22,9 +25,31 @@ async function connect(uri, dbname) {
     return _db;
 }
 
+const generateAcessToken = (id, email) => {
+  return jwt.sign({
+    'user_id': id,
+    'email': email
+  }, process.env.TOKEN_SECRET, {
+    expiresIn: "2h"
+  });
+}
+
+
 async function main() {
 
   let db = await connect(mongoUri, dbname);
+
+  app.post('/users', async (req, res) => {
+    const result = await db.collection("users").insertOne({
+      'email': req.body.email,
+      'password': await bcrypt.hash(req.body.password, 12)
+    })
+
+    res.json({
+      "message": "New user account",
+      "result": result
+    })
+  })
 
 
   app.get('/', function (req, res) {
