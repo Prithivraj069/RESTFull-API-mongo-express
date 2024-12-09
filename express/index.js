@@ -34,6 +34,24 @@ const generateAcessToken = (id, email) => {
   });
 }
 
+const verifyToken = (req, res, next) => {
+  console.log(req.headers);
+  const authHeader = req.headers['authorization'];
+  console.log(authHeader);
+  const token = authHeader && authHeader.split(' ')[1];
+  if(!token) {
+    return res.sendStatus(403);
+  }
+
+  jwt.verify(token, process.env.TOKEN_SECRET, function (err, user) {
+    if(err) {
+      return res.sendStatus(403);
+    } 
+    req.user = user;
+    next();
+  })
+}
+
 
 async function main() {
 
@@ -51,25 +69,26 @@ async function main() {
     })
   })
 
-  app.post('login', async function(req, res) {
-    const {email, password} = req.body;
-    const user = await db.colllection('users').findOne({email:email})
+  app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    const user = await db.collection('users').findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid password' });
     }
-  
     const accessToken = generateAcessToken(user._id, user.email);
-    res.json({
-      accessToken: accessToken
-    })
-  })
+    res.json({ accessToken: accessToken });
+  });
 
-  app.get('/', function (req, res) {
-    res.json({
-        'message': 'Hello World!'
-    })
-})
+  app.get('/profile', verifyToken, (req, res) => {
+    res.json({ message: 'This is a protected route', user: req.user });
+  });
 
   app.get('/listings/restaurants', async (req, res) => {
 
