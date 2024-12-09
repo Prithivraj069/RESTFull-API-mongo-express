@@ -51,6 +51,19 @@ async function main() {
     })
   })
 
+  app.post('login', async function(req, res) {
+    const {email, password} = req.body;
+    const user = await db.colllection('users').findOne({email:email})
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+  
+    const accessToken = generateAcessToken(user._id, user.email);
+    res.json({
+      accessToken: accessToken
+    })
+  })
 
   app.get('/', function (req, res) {
     res.json({
