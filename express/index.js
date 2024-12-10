@@ -7,10 +7,10 @@ const jwt = require('jsonwebtoken');
 
 const MongoClient = require("mongodb").MongoClient;
 
-const dbname = "sample_restaurants";
+const dbname = "student_db";
 const mongoUri = process.env.MONGO_URI;
-const RESTAURANTS = "restaurants";
-const NIGHBORHOODS = "neighborhoods";
+const MATERIAL = "material_data";
+
 
 console.log(mongoUri);
 
@@ -90,13 +90,15 @@ async function main() {
     res.json({ message: 'This is a protected route', user: req.user });
   });
 
-  app.get('/listings/restaurants', async (req, res) => {
+
+  app.get('/listings/materials', async (req, res) => {
 
     try{
-      const listings = await db.collection(RESTAURANTS)
+      const listings = await db.collection(MATERIAL)
       .find().project({
           name:1,
-          cuisine: 1
+          location: 1,
+          quantity: 1
       }).limit(15).toArray();
 
       res.json({
@@ -109,9 +111,9 @@ async function main() {
     }  
   })
 
-  app.get('/listings/restaurants/:id', async (req, res) => {
+  app.get('/listings/materials/:id', async (req, res) => {
     const id = req.params.id;
-    const result = await db.collection(RESTAURANTS)
+    const result = await db.collection(MATERIAL)
           .findOne({
             _id: new ObjectId(id)
           })
@@ -124,24 +126,25 @@ async function main() {
   })
 
   // POST Method
-  app.post('/restaurant', async function (req, res) {
+  app.post('/material', async function (req, res) {
 
     try {
-        if (!req.body.name || !req.body.borough || !req.body.cuisine || !req.body.address.building
-            || !req.body.address.street || !req.body.address.zipcode) {
+        if (!req.body.name || !req.body.date || !req.body.material_type || !req.body.quantity) {
             res.status(400).json({
                 'error': 'Missing field'
             });
             return;
         }
 
-        const result = await db.collection(RESTAURANTS).insertOne({
+        const result = await db.collection(MATERIAL).insertOne({
             name: req.body.name,
-            borough: req.body.borough,
-            cuisine: req.body.cuisine,
+            date: req.body.date,
+            material_type: req.body.material_type,
+            quantity: req.body.quantity,
             address: {
                 building: req.body.address.building,
                 street: req.body.address.street,
+                area:req.body.address.area,
                 zipcode: req.body.address.zipcode
             }
         })
@@ -157,17 +160,17 @@ async function main() {
 })
 
 //PUT Method for updating 
-app.put('/restaurant/:id', async function (req, res) {
+app.put('/material/:id', async function (req, res) {
     try {
 
-      const result = await db.collection(RESTAURANTS).updateOne(
+      const result = await db.collection(MATERIAL).updateOne(
         {
           _id: new ObjectId(req.params.id)
         },{
           $set: {
             name:req.body.name,
-            cuisine: req.body.cuisine,
-            borough: req.body.borough,
+            material_type: req.body.material_type,
+            quantity: req.body.quantity,
             address: {
               building: req.body.address.building,
               street:req.body.address.building,
@@ -189,10 +192,10 @@ app.put('/restaurant/:id', async function (req, res) {
 
 //DELETE Method
 
-app.delete('/restaurant/:id', async function (req, res) {
+app.delete('/material/:id', async function (req, res) {
   try {
 
-    const result = await db.collection(RESTAURANTS).deleteOne({
+    const result = await db.collection(MATERIAL).deleteOne({
       '_id': new ObjectId(req.params.id)
     })
 
